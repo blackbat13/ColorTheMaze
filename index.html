@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Color the maze</title>
+</head>
+<body style="margin: 0; overflow: hidden;">
+<canvas id="canvas"></canvas>
+</body>
+<script>
+    let canvas = document.getElementById("canvas");
+    let ctx = canvas.getContext("2d");
+    let cellSize = 20;
+    let image;
+    let pixels = [];
+    let sourceIdCounter = [];
+    let currentSources = 0;
+    let maxSourceId = -1;
+    let speed = 50;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+
+    function init() {
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        drawMaze();
+        image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        clearImageData();
+
+        canvas.addEventListener("click", onClick, false);
+        draw();
+    }
+
+    function clearImageData() {
+        for(let i = 0; i < image.data.length; i++) {
+            if(image.data[i] !== 0) {
+                image.data[i] = 255;
+            }
+        }
+    }
+
+    function onClick(e) {
+        let rect = canvas.getBoundingClientRect();
+        pixels.push([e.clientX - rect.left, e.clientY - rect.top, randomColor(), addSource()]);
+    }
+
+    function drawMaze() {
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let x = 0; x < canvas.width; x += cellSize) {
+            for (let y = 0; y < canvas.height; y += cellSize) {
+                if (Math.floor(Math.random() * 2) === 0) {
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + cellSize, y + cellSize);
+                } else {
+                    ctx.moveTo(x, y + cellSize);
+                    ctx.lineTo(x + cellSize, y);
+                }
+            }
+        }
+
+        ctx.stroke();
+    }
+
+    function draw() {
+        let count = 0;
+        while(pixels.length > 0 && count < speed * currentSources) {
+            if(colorPixel()) {
+                count += 1;
+            }
+        }
+
+        ctx.putImageData(image, 0, 0);
+        requestAnimationFrame(draw);
+    }
+
+    function colorPixel() {
+        let pix = pixels[0];
+        pixels.shift();
+        let x = pix[0];
+        let y = pix[1];
+        let currentColor = pix[2];
+        let sId = pix[3];
+
+        if(x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) {
+            decreaseSourceId(sId);
+            return false;
+        }
+
+        let color = getColor(x, y);
+
+        if (color.toString() !== [255, 255, 255].toString()) {
+            decreaseSourceId(sId);
+            return false;
+        }
+
+        setColor(x, y, currentColor);
+
+        sourceIdCounter[sId] += 4;
+
+        pixels.push([x + 1, y, currentColor, sId]);
+        pixels.push([x - 1, y, currentColor, sId]);
+        pixels.push([x, y + 1, currentColor, sId]);
+        pixels.push([x, y - 1, currentColor, sId]);
+
+        decreaseSourceId(sId);
+
+        return true;
+    }
+
+    function getColor(x, y) {
+        let color = [0, 0, 0];
+        for(let i = 0; i < 3; i++) {
+            color[i] = image.data[(y * canvas.width + x) * 4 + i];
+        }
+
+        return color;
+    }
+
+    function setColor(x, y, color) {
+        for(let i = 0; i < 3; i++) {
+            image.data[(y * canvas.width + x) * 4 + i] = color[i];
+        }
+    }
+
+    function randomColor() {
+        let color = [0,0,0];
+        for(let i = 0; i < 3; i++) {
+            color[i] = Math.floor(Math.random() * 256);
+        }
+
+        return color;
+    }
+
+    function addSource() {
+        sourceIdCounter.push(1);
+        maxSourceId += 1;
+        currentSources += 1;
+        return maxSourceId;
+    }
+
+    function decreaseSourceId(sId) {
+        sourceIdCounter[sId] -= 1;
+        if(sourceIdCounter[sId] === 0) {
+            currentSources -= 1;
+        }
+    }
+
+    init();
+</script>
+</html>
