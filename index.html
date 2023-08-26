@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Color the maze</title>
 </head>
+
 <body style="margin: 0; overflow: hidden;">
-<canvas id="canvas"></canvas>
+    <canvas id="canvas"></canvas>
 </body>
 <script>
     let canvas = document.getElementById("canvas");
@@ -35,8 +37,8 @@
     }
 
     function clearImageData() {
-        for(let i = 0; i < image.data.length; i++) {
-            if(image.data[i] !== 0) {
+        for (let i = 0; i < image.data.length; i++) {
+            if (image.data[i] !== 0) {
                 image.data[i] = 255;
             }
         }
@@ -44,7 +46,7 @@
 
     function onClick(e) {
         let rect = canvas.getBoundingClientRect();
-        pixels.push([e.clientX - rect.left, e.clientY - rect.top, randomColor(), addSource()]);
+        pixels.push([e.clientX - rect.left, e.clientY - rect.top, randomPastelColor(), addSource()]);
     }
 
     function drawMaze() {
@@ -68,8 +70,8 @@
 
     function draw() {
         let count = 0;
-        while(pixels.length > 0 && count < speed * currentSources) {
-            if(colorPixel()) {
+        while (pixels.length > 0 && count < speed * currentSources) {
+            if (colorPixel()) {
                 count += 1;
             }
         }
@@ -86,7 +88,7 @@
         let currentColor = pix[2];
         let sId = pix[3];
 
-        if(x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) {
+        if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) {
             decreaseSourceId(sId);
             return false;
         }
@@ -114,7 +116,7 @@
 
     function getColor(x, y) {
         let color = [0, 0, 0];
-        for(let i = 0; i < 3; i++) {
+        for (let i = 0; i < 3; i++) {
             color[i] = image.data[(y * canvas.width + x) * 4 + i];
         }
 
@@ -122,18 +124,32 @@
     }
 
     function setColor(x, y, color) {
-        for(let i = 0; i < 3; i++) {
+        for (let i = 0; i < 3; i++) {
             image.data[(y * canvas.width + x) * 4 + i] = color[i];
         }
     }
 
     function randomColor() {
-        let color = [0,0,0];
-        for(let i = 0; i < 3; i++) {
+        let color = [0, 0, 0];
+        for (let i = 0; i < 3; i++) {
             color[i] = Math.floor(Math.random() * 256);
         }
 
         return color;
+    }
+
+    function hslToRgb(h, s, l) {
+        s /= 100;
+        l /= 100;
+        const k = n => (n + h / 30) % 12;
+        const a = s * Math.min(l, 1 - l);
+        const f = n =>
+            l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+        return [255 * f(0), 255 * f(8), 255 * f(4)];
+    }
+
+    function randomPastelColor() {
+        return hslToRgb(360 * Math.random(), 25 + 70 * Math.random(), 55 + 30 * Math.random());
     }
 
     function addSource() {
@@ -145,11 +161,12 @@
 
     function decreaseSourceId(sId) {
         sourceIdCounter[sId] -= 1;
-        if(sourceIdCounter[sId] === 0) {
+        if (sourceIdCounter[sId] === 0) {
             currentSources -= 1;
         }
     }
 
     init();
 </script>
+
 </html>
